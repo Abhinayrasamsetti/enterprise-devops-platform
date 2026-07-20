@@ -1,15 +1,35 @@
-# Enterprise Application Delivery Platform (EADP)
+# Enterprise Application Delivery Platform
 
-Enterprise-grade platform engineering repository focused on cloud-native application delivery, Infrastructure as Code, DevSecOps, observability, governance, and operational excellence.
+Production-grade Azure Platform Engineering repository.
 
 ## Vision
+Build an enterprise Azure platform using Terraform, AKS, GitHub Actions, Helm and DevOps best practices.
 
-Build a production-quality enterprise platform repository demonstrating architecture, implementation, operations, and governance suitable for enterprise-scale environments.
+## Technology Stack
+- Azure
+- Terraform
+- GitHub Actions
+- Docker
+- AKS
+- Helm
+- Prometheus
+- Grafana
+- Loki
+- OpenTelemetry
 
-## Milestone 0
+## Repository Structure
+docs/
+infrastructure/
+platform/
+security/
+observability/
+operations/
+.github/
 
-- Repository foundation
-- Documentation standards
-- Governance
-- Contribution guidelines
-- Roadmap
+## Roadmap
+- Complete Terraform modules
+- Build AKS platform
+- Add GitHub Actions
+- Add security automation
+- Add observability
+- Deploy sample application
