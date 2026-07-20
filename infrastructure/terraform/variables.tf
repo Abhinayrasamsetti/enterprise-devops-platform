@@ -1,2 +1,8 @@
-variable "location" { type = string }
-variable "environment" { type = string }
+variable "location" {
+  type = string
+  default = "Central India"
+}
+
+variable "environment" {
+  type = string
+}

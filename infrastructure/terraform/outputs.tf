@@ -1,1 +1,3 @@
-output "landing_zone" { value = "initialized" }
+output "environment" {
+  value = var.environment
+}
