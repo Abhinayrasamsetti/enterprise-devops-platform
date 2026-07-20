@@ -1,0 +1,21 @@
+name: IaC Security
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Checkov
+        run: echo "checkov -d infrastructure/terraform"
+
+      - name: tfsec
+        run: echo "tfsec infrastructure/terraform"
+
+      - name: Upload SARIF
+        run: echo "Upload results"
