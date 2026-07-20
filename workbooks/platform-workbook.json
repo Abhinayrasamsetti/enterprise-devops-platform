@@ -1,0 +1,17 @@
+{
+  "version": "Notebook/1.0",
+  "items": [
+    {
+      "type": "query",
+      "name": "CPU Overview"
+    },
+    {
+      "type": "query",
+      "name": "Memory Overview"
+    },
+    {
+      "type": "query",
+      "name": "Node Health"
+    }
+  ]
+}
