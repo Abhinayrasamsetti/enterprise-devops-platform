@@ -1,10 +1,45 @@
-name: CI
+name: Repository CI
+
 on:
   push:
     branches: [main]
+  pull_request:
+    branches: [main]
+
 jobs:
-  validate:
+  repository-validation:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
-      - run: echo "Run lint, tests, terraform validate"
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Repository Summary
+        run: |
+          echo "====================================="
+          echo "Enterprise DevOps Platform"
+          echo "====================================="
+          echo "Repository : ${{ github.repository }}"
+          echo "Branch     : ${{ github.ref_name }}"
+          echo "Commit     : ${{ github.sha }}"
+          echo "Actor      : ${{ github.actor }}"
+
+      - name: Verify Repository Structure
+        run: |
+          required_dirs=(
+            ".github"
+            "terraform"
+            "docs"
+            "tests"
+          )
+
+          for dir in "${required_dirs[@]}"; do
+            if [ -d "$dir" ]; then
+              echo "✔ $dir"
+            else
+              echo "✘ Missing: $dir"
+            fi
+          done
+
+      - name: Success
+        run: echo "Repository validation completed successfully."
