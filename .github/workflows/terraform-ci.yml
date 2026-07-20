@@ -34,7 +34,7 @@ jobs:
           echo "Terraform validation completed."
 
       - name: Upload Terraform Files
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: terraform-source
           path: terraform
