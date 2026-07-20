@@ -1,0 +1,1 @@
+run "recording_rules" {}

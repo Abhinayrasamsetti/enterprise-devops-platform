@@ -1,0 +1,7 @@
+groups:
+- name: platform.rules
+  rules:
+  - record: node:cpu_usage:avg5m
+    expr: avg(rate(node_cpu_seconds_total[5m]))
+  - record: pod:memory_usage:sum
+    expr: sum(container_memory_working_set_bytes)
