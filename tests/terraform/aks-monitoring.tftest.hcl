@@ -1,0 +1,1 @@
+run "aks_monitoring" {}
