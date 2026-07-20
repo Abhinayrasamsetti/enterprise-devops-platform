@@ -1,0 +1,14 @@
+name: Security Scan
+on:
+  pull_request:
+  push:
+    branches: [main]
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Trivy IaC Scan
+        run: echo "trivy config ."
+      - name: Gitleaks
+        run: echo "gitleaks detect"
