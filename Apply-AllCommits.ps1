@@ -5,142 +5,123 @@
     [switch]$Push
 )
 
-# ------------------------------
-# Helper
-# ------------------------------
-function Invoke-Git {
-    param(
-        [Parameter(ValueFromRemainingArguments = $true)]
-        [string[]]$ArgsList
-    )
-
-    $output = & git @ArgsList 2>&1
-    $exit = $LASTEXITCODE
-
-    return @{
-        ExitCode = $exit
-        Output   = $output
-    }
-}
-
-# ------------------------------
+#----------------------------------------------------------
 # Verify repository
-# ------------------------------
+#----------------------------------------------------------
 
-$result = Invoke-Git rev-parse --show-toplevel
+$RepoRoot = (& git rev-parse --show-toplevel).Trim()
 
-if($result.ExitCode -ne 0){
-    Write-Host ""
-    Write-Host "ERROR: Current folder is not inside a Git repository."
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "Not inside a Git repository."
     exit 1
 }
 
-$RepoRoot = $result.Output.Trim()
-
 Write-Host ""
-Write-Host "===================================================="
+Write-Host "============================================================"
 Write-Host " Enterprise DevOps Platform Commit Automation"
-Write-Host "===================================================="
+Write-Host "============================================================"
 Write-Host "Repository : $RepoRoot"
 Write-Host "Commit Root: $CommitRoot"
 Write-Host "Range      : $Start -> $End"
 Write-Host ""
 
-# ------------------------------
-# Discover commit folders
-# ------------------------------
+#----------------------------------------------------------
+# Discover Commit Folders
+#----------------------------------------------------------
 
 $Folders = Get-ChildItem $CommitRoot -Directory |
 Where-Object {
 
-    $_.Name -match "^Commit-(\d+)$" -and
+    $_.Name -match '^Commit-(\d+)$' -and
     [int]$Matches[1] -ge $Start -and
     [int]$Matches[1] -le $End
 
-} |
-Sort-Object {
+} | Sort-Object {
 
     [int]($_.Name.Replace("Commit-",""))
 
 }
 
 if($Folders.Count -eq 0){
-
     Write-Host "No commit folders found."
     exit
-
 }
 
+$Applied = @()
+$Skipped = @()
+$Failed  = @()
+
 $total = $Folders.Count
-
-$success = 0
-$skipped = 0
-$failed = 0
-
-$index = 0
+$i = 0
 
 foreach($Folder in $Folders){
 
-    $index++
+    $i++
 
     Write-Progress `
         -Activity "Applying Commits" `
-        -Status "$index of $total" `
-        -PercentComplete (($index/$total)*100)
+        -Status "$i of $total" `
+        -PercentComplete (($i/$total)*100)
+
+    Write-Host ""
+    Write-Host "======================================================="
+    Write-Host $Folder.Name
+    Write-Host "======================================================="
 
     $Manifest = Join-Path $Folder.FullName "manifest.json"
-    $Files = Join-Path $Folder.FullName "files"
+    $Files    = Join-Path $Folder.FullName "files"
 
     if(!(Test-Path $Manifest)){
-
-        Write-Host ""
-        Write-Host "$($Folder.Name) : manifest missing"
-        $skipped++
+        Write-Host "Manifest missing."
+        $Skipped += $Folder.Name
         continue
-
     }
 
     if(!(Test-Path $Files)){
+        Write-Host "Files folder missing."
+        $Skipped += $Folder.Name
+        continue
+    }
 
-        Write-Host ""
-        Write-Host "$($Folder.Name) : files folder missing"
-        $skipped++
+    try{
+
+        $Data = Get-Content $Manifest -Raw | ConvertFrom-Json
+
+        Copy-Item `
+            "$Files\*" `
+            $RepoRoot `
+            -Force `
+            -Recurse
+
+    }
+    catch{
+
+        Write-Host "Copy failed."
+        $Failed += $Folder.Name
         continue
 
     }
-
-    $Data = Get-Content $Manifest -Raw | ConvertFrom-Json
-
-    Write-Host ""
-    Write-Host "----------------------------------------------------"
-    Write-Host "$($Folder.Name)"
-    Write-Host $Data.message
-    Write-Host "----------------------------------------------------"
-
-    Copy-Item `
-        "$Files\*" `
-        $RepoRoot `
-        -Recurse `
-        -Force
 
     #
     # Stage
     #
 
-    $null = Invoke-Git -C $RepoRoot add .
+    & git -C $RepoRoot add .
 
     if($LASTEXITCODE -ne 0){
 
         Write-Host "git add failed."
 
-        $failed++
+        & git -C $RepoRoot reset
 
-        break
+        $Failed += $Folder.Name
+
+        continue
 
     }
 
     #
-    # Check staged changes
+    # Any staged changes?
     #
 
     & git -C $RepoRoot diff --cached --quiet
@@ -149,7 +130,7 @@ foreach($Folder in $Folders){
 
         Write-Host "Nothing changed."
 
-        $skipped++
+        $Skipped += $Folder.Name
 
         continue
 
@@ -159,28 +140,30 @@ foreach($Folder in $Folders){
     # Commit
     #
 
-    $null = Invoke-Git -C $RepoRoot commit -m $Data.message
+    & git -C $RepoRoot commit -m $Data.message
 
     if($LASTEXITCODE -ne 0){
 
-        Write-Host "git commit failed."
+        Write-Host "Commit failed."
 
-        $failed++
+        & git -C $RepoRoot reset
 
-        break
+        $Failed += $Folder.Name
+
+        continue
 
     }
 
     Write-Host "SUCCESS"
 
-    $success++
+    $Applied += $Folder.Name
 
 }
 
 Write-Progress -Activity "Applying Commits" -Completed
 
 #
-# Push
+# Push once
 #
 
 if($Push){
@@ -188,11 +171,11 @@ if($Push){
     Write-Host ""
     Write-Host "Pushing..."
 
-    $null = Invoke-Git -C $RepoRoot push
+    & git -C $RepoRoot push
 
     if($LASTEXITCODE -eq 0){
 
-        Write-Host "Push successful."
+        Write-Host "Push completed."
 
     }
     else{
@@ -203,11 +186,35 @@ if($Push){
 
 }
 
+#
+# Summary
+#
+
 Write-Host ""
-Write-Host "===================================================="
+Write-Host "============================================================"
 Write-Host "SUMMARY"
-Write-Host "===================================================="
-Write-Host "Applied : $success"
-Write-Host "Skipped : $skipped"
-Write-Host "Failed  : $failed"
-Write-Host "===================================================="
+Write-Host "============================================================"
+
+Write-Host ""
+Write-Host "Applied ($($Applied.Count))"
+
+foreach($x in $Applied){
+    Write-Host "  ✔ $x"
+}
+
+Write-Host ""
+Write-Host "Skipped ($($Skipped.Count))"
+
+foreach($x in $Skipped){
+    Write-Host "  • $x"
+}
+
+Write-Host ""
+Write-Host "Failed ($($Failed.Count))"
+
+foreach($x in $Failed){
+    Write-Host "  ✖ $x"
+}
+
+Write-Host ""
+Write-Host "Done."
