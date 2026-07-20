@@ -1,0 +1,38 @@
+name: Deploy to AKS
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  ACR_NAME: acrplatformdev001
+  IMAGE_NAME: sample-app
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure Login (OIDC)
+        uses: azure/login@v2
+
+      - name: Build Image
+        run: docker build -t $IMAGE_NAME:${{ github.sha }} .
+
+      - name: Push to ACR
+        run: echo "Push image to ACR"
+
+      - name: Get AKS Credentials
+        run: echo "az aks get-credentials"
+
+      - name: Helm Upgrade
+        run: helm upgrade --install sample-app kubernetes/helm/sample-app
+
+      - name: Deployment Summary
+        run: echo "Deployment completed."
