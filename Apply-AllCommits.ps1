@@ -5,111 +5,209 @@
     [switch]$Push
 )
 
-$ErrorActionPreference = "Stop"
+# ------------------------------
+# Helper
+# ------------------------------
+function Invoke-Git {
+    param(
+        [Parameter(ValueFromRemainingArguments = $true)]
+        [string[]]$ArgsList
+    )
 
-# Verify we're inside a Git repository
-try {
-    $RepoRoot = (git rev-parse --show-toplevel).Trim()
+    $output = & git @ArgsList 2>&1
+    $exit = $LASTEXITCODE
+
+    return @{
+        ExitCode = $exit
+        Output   = $output
+    }
 }
-catch {
-    Write-Host "ERROR: Run this script from inside your Git repository."
+
+# ------------------------------
+# Verify repository
+# ------------------------------
+
+$result = Invoke-Git rev-parse --show-toplevel
+
+if($result.ExitCode -ne 0){
+    Write-Host ""
+    Write-Host "ERROR: Current folder is not inside a Git repository."
     exit 1
 }
 
+$RepoRoot = $result.Output.Trim()
+
 Write-Host ""
-Write-Host "==============================================="
-Write-Host " Enterprise DevOps Platform Commit Applier"
-Write-Host "==============================================="
+Write-Host "===================================================="
+Write-Host " Enterprise DevOps Platform Commit Automation"
+Write-Host "===================================================="
 Write-Host "Repository : $RepoRoot"
 Write-Host "Commit Root: $CommitRoot"
-Write-Host "Commit Range: $Start -> $End"
+Write-Host "Range      : $Start -> $End"
 Write-Host ""
 
-# Discover Commit-XXX folders within the range
-$CommitFolders = Get-ChildItem $CommitRoot -Directory |
-    Where-Object {
-        $_.Name -match '^Commit-(\d+)$' -and
-        [int]($Matches[1]) -ge $Start -and
-        [int]($Matches[1]) -le $End
-    } |
-    Sort-Object { [int]($_.Name -replace 'Commit-','') }
+# ------------------------------
+# Discover commit folders
+# ------------------------------
 
-if($CommitFolders.Count -eq 0)
-{
-    Write-Host "No matching commit folders found."
-    exit
+$Folders = Get-ChildItem $CommitRoot -Directory |
+Where-Object {
+
+    $_.Name -match "^Commit-(\d+)$" -and
+    [int]$Matches[1] -ge $Start -and
+    [int]$Matches[1] -le $End
+
+} |
+Sort-Object {
+
+    [int]($_.Name.Replace("Commit-",""))
+
 }
 
-foreach($Folder in $CommitFolders)
-{
+if($Folders.Count -eq 0){
+
+    Write-Host "No commit folders found."
+    exit
+
+}
+
+$total = $Folders.Count
+
+$success = 0
+$skipped = 0
+$failed = 0
+
+$index = 0
+
+foreach($Folder in $Folders){
+
+    $index++
+
+    Write-Progress `
+        -Activity "Applying Commits" `
+        -Status "$index of $total" `
+        -PercentComplete (($index/$total)*100)
+
     $Manifest = Join-Path $Folder.FullName "manifest.json"
     $Files = Join-Path $Folder.FullName "files"
 
-    if(!(Test-Path $Manifest))
-    {
-        Write-Host "Skipping $($Folder.Name) (manifest.json missing)"
+    if(!(Test-Path $Manifest)){
+
+        Write-Host ""
+        Write-Host "$($Folder.Name) : manifest missing"
+        $skipped++
         continue
+
     }
 
-    if(!(Test-Path $Files))
-    {
-        Write-Host "Skipping $($Folder.Name) (files folder missing)"
+    if(!(Test-Path $Files)){
+
+        Write-Host ""
+        Write-Host "$($Folder.Name) : files folder missing"
+        $skipped++
         continue
+
     }
 
     $Data = Get-Content $Manifest -Raw | ConvertFrom-Json
 
     Write-Host ""
-    Write-Host "======================================="
-    Write-Host "Applying $($Folder.Name)"
-    Write-Host "$($Data.message)"
-    Write-Host "======================================="
+    Write-Host "----------------------------------------------------"
+    Write-Host "$($Folder.Name)"
+    Write-Host $Data.message
+    Write-Host "----------------------------------------------------"
 
-    Copy-Item "$Files\*" $RepoRoot -Recurse -Force
+    Copy-Item `
+        "$Files\*" `
+        $RepoRoot `
+        -Recurse `
+        -Force
 
-    # Stage files (ignore CRLF warnings)
-    git -C $RepoRoot add . *> $null
+    #
+    # Stage
+    #
 
-    if($LASTEXITCODE -ne 0)
-    {
-        throw "git add failed."
+    $null = Invoke-Git -C $RepoRoot add .
+
+    if($LASTEXITCODE -ne 0){
+
+        Write-Host "git add failed."
+
+        $failed++
+
+        break
+
     }
 
-    # Skip if nothing changed
-    git -C $RepoRoot diff --cached --quiet
+    #
+    # Check staged changes
+    #
 
-    if($LASTEXITCODE -eq 0)
-    {
-        Write-Host "No changes detected."
+    & git -C $RepoRoot diff --cached --quiet
+
+    if($LASTEXITCODE -eq 0){
+
+        Write-Host "Nothing changed."
+
+        $skipped++
+
         continue
+
     }
 
-    git -C $RepoRoot commit -m "$($Data.message)"
+    #
+    # Commit
+    #
 
-    if($LASTEXITCODE -ne 0)
-    {
-        throw "git commit failed."
+    $null = Invoke-Git -C $RepoRoot commit -m $Data.message
+
+    if($LASTEXITCODE -ne 0){
+
+        Write-Host "git commit failed."
+
+        $failed++
+
+        break
+
     }
 
-    Write-Host "✓ Commit created."
+    Write-Host "SUCCESS"
+
+    $success++
+
 }
 
-if($Push)
-{
+Write-Progress -Activity "Applying Commits" -Completed
+
+#
+# Push
+#
+
+if($Push){
+
     Write-Host ""
-    Write-Host "Pushing to GitHub..."
+    Write-Host "Pushing..."
 
-    git -C $RepoRoot push
+    $null = Invoke-Git -C $RepoRoot push
 
-    if($LASTEXITCODE -ne 0)
-    {
-        throw "Push failed."
+    if($LASTEXITCODE -eq 0){
+
+        Write-Host "Push successful."
+
+    }
+    else{
+
+        Write-Host "Push failed."
+
     }
 
-    Write-Host "✓ Push successful."
 }
 
 Write-Host ""
-Write-Host "==============================================="
-Write-Host "Completed Successfully"
-Write-Host "==============================================="
+Write-Host "===================================================="
+Write-Host "SUMMARY"
+Write-Host "===================================================="
+Write-Host "Applied : $success"
+Write-Host "Skipped : $skipped"
+Write-Host "Failed  : $failed"
+Write-Host "===================================================="
