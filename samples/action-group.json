@@ -1,0 +1,12 @@
+{
+  "receivers": [
+    {
+      "type": "email",
+      "name": "platform-team"
+    },
+    {
+      "type": "webhook",
+      "name": "itsm-webhook"
+    }
+  ]
+}
