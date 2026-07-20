@@ -1,0 +1,8 @@
+apiVersion: helm.cattle.io/v1
+kind: HelmChart
+metadata:
+  name: csi-secrets-store
+  namespace: kube-system
+spec:
+  chart: csi-secrets-store-provider-azure
+  repo: https://azure.github.io/secrets-store-csi-driver-provider-azure/charts
