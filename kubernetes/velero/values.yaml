@@ -1,0 +1,7 @@
+configuration:
+  backupStorageLocation:
+    bucket: velero-backups
+    provider: azure
+schedules:
+  daily:
+    schedule: "0 2 * * *"

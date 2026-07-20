@@ -1,0 +1,8 @@
+apiVersion: velero.io/v1
+kind: BackupStorageLocation
+metadata:
+  name: azure
+spec:
+  provider: azure
+  objectStorage:
+    bucket: velero-backups
