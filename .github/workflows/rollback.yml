@@ -6,5 +6,15 @@ on:
 jobs:
   rollback:
     runs-on: ubuntu-latest
+
     steps:
-      - run: helm rollback sample-app
+      - uses: actions/checkout@v4
+
+      - name: Rollback Information
+        run: |
+          echo "====================================="
+          echo "Rollback Workflow"
+          echo "====================================="
+          echo "Automatic rollback is intentionally disabled."
+          echo "This repository is a portfolio/reference implementation."
+          echo "Rollback logic will be added when deployment is enabled."
