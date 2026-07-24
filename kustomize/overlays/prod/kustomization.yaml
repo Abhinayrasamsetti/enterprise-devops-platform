@@ -1,0 +1,7 @@
+resources:
+- ../../base
+
+namespace: prod
+images:
+- name: sample-app
+  newTag: latest
