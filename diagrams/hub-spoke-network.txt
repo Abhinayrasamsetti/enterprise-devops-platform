@@ -1,0 +1,9 @@
+Internet
+   |
+Application Gateway
+   |
+Hub VNet
+ |   |   |
+DNS NAT Firewall
+ |   |
+Spoke1  Spoke2
