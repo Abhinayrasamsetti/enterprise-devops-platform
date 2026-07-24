@@ -1,0 +1,6 @@
+configuration:
+  backupStorageLocation:
+    bucket: aks-backups
+schedules:
+  daily:
+    schedule: "0 2 * * *"
