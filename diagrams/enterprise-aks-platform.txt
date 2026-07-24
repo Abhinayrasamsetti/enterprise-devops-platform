@@ -1,0 +1,12 @@
+Internet
+   |
+Traffic Manager
+   |
+Application Gateway
+   |
+NGINX / Istio
+   |
+Private AKS Cluster
+ |-------------------------|
+ | ACR | Monitor | Backup |
+ | GitOps | Identity | DNS |
