@@ -1,0 +1,7 @@
+module "rbac" {
+  source = "../../"
+
+  scope                = "/subscriptions/00000000-0000-0000-0000-000000000000"
+  role_definition_name = "Reader"
+  principal_id         = "11111111-1111-1111-1111-111111111111"
+}
