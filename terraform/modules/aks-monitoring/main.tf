@@ -1,6 +1,4 @@
-module "diagnostics" {
-  source = "../diagnostic-settings"
-  name = "${var.cluster_name}-diag"
+resource "azurerm_monitor_diagnostic_setting" "aks" {
+  name               = "aks-diagnostics"
   target_resource_id = var.cluster_id
-  log_analytics_workspace_id = var.log_analytics_workspace_id
 }

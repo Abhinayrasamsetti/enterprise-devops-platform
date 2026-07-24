@@ -1,1 +1,3 @@
-run "aks_monitoring" {}
+run "plan" {
+  command = plan
+}
