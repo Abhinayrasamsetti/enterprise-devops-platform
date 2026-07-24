@@ -1,0 +1,6 @@
+resource "azurerm_subscription_policy_assignment" "this" {
+  name                 = var.name
+  display_name         = var.display_name
+  subscription_id      = var.scope
+  policy_definition_id = var.policy_definition_id
+}
