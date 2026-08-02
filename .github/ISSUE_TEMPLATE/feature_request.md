@@ -1,10 +1,12 @@
 ---
-name: Feature request
+name: Feature Request
 about: Suggest an enhancement
 ---
 
-## Problem
+## Problem Statement
 
 ## Proposed Solution
 
-## Alternatives
+## Benefits
+
+## Additional Context

@@ -1,6 +1,6 @@
 ---
-name: Bug report
-about: Report a defect
+name: Bug Report
+about: Report a bug
 ---
 
 ## Description
@@ -9,4 +9,6 @@ about: Report a defect
 
 ## Expected Behavior
 
-## Actual Behavior
+## Environment
+
+## Additional Notes
