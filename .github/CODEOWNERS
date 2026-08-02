@@ -1,1 +1,11 @@
-* @Abhinayrasamsetti
+# Default owners
+* @ArchitectProjects
+
+# GitHub Workflows
+.github/ @ArchitectProjects
+
+# Terraform
+terraform/ @ArchitectProjects
+
+# Documentation
+docs/ @ArchitectProjects
