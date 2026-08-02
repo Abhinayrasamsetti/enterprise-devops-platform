@@ -1,13 +1,22 @@
 # Pull Request
 
 ## Summary
+Describe the purpose of this change.
 
-## Changes
+## Type of Change
+- [ ] Feature
+- [ ] Bug Fix
+- [ ] Documentation
+- [ ] Refactor
+- [ ] CI/CD
+- [ ] Security
 
-## Testing
+## Validation
+- [ ] Tested locally
+- [ ] Documentation updated
+- [ ] Terraform validated (if applicable)
 
 ## Checklist
-
-- [ ] Documentation updated
-- [ ] Tests completed
-- [ ] No secrets committed
+- [ ] Follows repository standards
+- [ ] No sensitive information included
+- [ ] Ready for review
